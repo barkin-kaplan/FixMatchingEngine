@@ -47,7 +47,7 @@ namespace ToyMatchingEngine.Helper
 
         public static bool ValidateSide(char side)
         {
-            return !(side == Side.BUY || side == Side.SELL);
+            return (side == Side.BUY || side == Side.SELL);
         }
 
         public static string GetTodayString()

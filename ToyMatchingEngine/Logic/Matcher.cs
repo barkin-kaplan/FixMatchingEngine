@@ -42,16 +42,19 @@ namespace ToyMatchingEngine.Logic
                 OrderAcceptor acceptor = OrderAcceptor.GetInstance();
                 decimal qty = initialQty;
                 decimal matchQty;
+                decimal lastPx;
                 if (side.getValue() == Side.BUY)
                 {
                     while(qty > 0 && sells.Count > 0 && sells[0].price <= price)
                     {
                         PassiveOrder nextPassive = sells[0];
+                        lastPx = nextPassive.price;
                         if (qty >= nextPassive.qty)
                         {
                             matchQty = nextPassive.qty;
                             qty -= matchQty;
-                            sells.RemoveAt(0);                            
+                            sells.RemoveAt(0);
+                            
                         }
                         else
                         {
@@ -59,8 +62,8 @@ namespace ToyMatchingEngine.Logic
                             nextPassive.qty -= matchQty;
                             qty = 0;                            
                         }
-                        acceptor.Orders[nextPassive.orderId].CumulativeQty += matchQty;
-                        acceptor.Orders[orderId].CumulativeQty += matchQty;
+                        acceptor.Orders[nextPassive.orderId].AddExecution(lastPx,matchQty);
+                        acceptor.Orders[orderId].AddExecution(lastPx, matchQty);
                     }
                 }
                 else
@@ -68,6 +71,7 @@ namespace ToyMatchingEngine.Logic
                     while (qty > 0 && buys.Count > 0 && buys[0].price >= price)
                     {
                         PassiveOrder nextPassive = buys[0];
+                        lastPx = nextPassive.price;
                         if (qty >= nextPassive.qty)
                         {
                             matchQty = nextPassive.qty;
@@ -80,8 +84,8 @@ namespace ToyMatchingEngine.Logic
                             nextPassive.qty -= matchQty;
                             qty = 0;
                         }
-                        acceptor.Orders[nextPassive.orderId].CumulativeQty += matchQty;
-                        acceptor.Orders[orderId].CumulativeQty += matchQty;
+                        acceptor.Orders[nextPassive.orderId].AddExecution(lastPx, matchQty);
+                        acceptor.Orders[orderId].AddExecution(lastPx, matchQty);
                     }
                 }
                 if(qty > 0)

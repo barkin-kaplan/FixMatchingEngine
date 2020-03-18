@@ -13,51 +13,73 @@ namespace ToyMatchingEngine.Connection
 {
     public class QuickFixAcceptor : IApplication
     {
+        private static QuickFixAcceptor instance { get; set; }
+        private QuickFixAcceptor() { }
+        public static QuickFixAcceptor GetInstance()
+        {
+            if(instance == null)
+            {
+                instance = new QuickFixAcceptor();
+            }
+            return instance;
+        }
         public void FromAdmin(Message message, SessionID sessionID)
         {
-            throw new NotImplementedException();
+            
         }
 
         public void FromApp(Message m, SessionID sessionID)
         {
             string msgType = m.Header.GetField(Tags.MsgType);
-            if(msgType == MsgType.NEWORDERSINGLE)
+            OrderAcceptor acceptor = OrderAcceptor.GetInstance();
+            Message response;
+            switch (msgType)
             {
-                bool result;string responseOrId;
-                (result, responseOrId) = OrderAcceptor.GetInstance().AddNewOrder(m);
-                if (result)
-                {
-                    QuickFix.FIX50SP2.ExecutionReport executionReport = new QuickFix.FIX50SP2.ExecutionReport();
-                    executionReport.SetField(new ClOrdID(m.GetField(Tags.ClOrdID)));
-                    executionReport.SetField(new OrderID(responseOrId));
-                    executionReport.SetField(new OrderQty(m.GetField(Tags.OrderQty)));
-                }
+                case MsgType.NEWORDERSINGLE:
+                    response = acceptor.AddNewMessage(m,sessionID);                    
+                    break;
+                case MsgType.ORDERCANCELREPLACEREQUEST:
+                    response = acceptor.AddReplaceMessage(m);
+                    break;
+                case MsgType.ORDERCANCELREQUEST:
+                    response = acceptor.AddCancelMessage(m);
+                    break;
+                default:
+                    response = new QuickFix.FIX50SP2.BusinessMessageReject();
+                    response.SetField(new Text($"Unsopported message type {msgType}"));
+                    break;
             }
+            Session.LookupSession(sessionID).Send(response);
         }
 
         public void OnCreate(SessionID sessionID)
         {
-            throw new NotImplementedException();
+            Console.WriteLine($"Created Session : {sessionID}");
         }
 
         public void OnLogon(SessionID sessionID)
         {
-            throw new NotImplementedException();
+            Console.WriteLine($"Logon Session : {sessionID}");
         }
 
         public void OnLogout(SessionID sessionID)
         {
-            throw new NotImplementedException();
+            Console.WriteLine($"Logout Session : {sessionID}");
         }
 
         public void ToAdmin(Message message, SessionID sessionID)
         {
-            throw new NotImplementedException();
+            
         }
 
         public void ToApp(Message message, SessionID sessionId)
         {
-            throw new NotImplementedException();
+            
+        }
+
+        public void PublishMessage(Message m,SessionID sessionID)
+        {
+            Session.LookupSession(sessionID).Send(m);
         }
     }
 }
